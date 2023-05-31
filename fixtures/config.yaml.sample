@@ -1,0 +1,7 @@
+database:
+  type: mysql
+  host: 1
+  port: 3306
+  username: root
+  password: 1
+  name: s
