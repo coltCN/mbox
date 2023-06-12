@@ -69,8 +69,8 @@ impl DbUtil {
                     .add_paragraph(Paragraph::new().add_run(Run::new().add_text("字段名"))),
                 TableCell::new()
                     .add_paragraph(Paragraph::new().add_run(Run::new().add_text("类型"))),
-                TableCell::new()
-                    .add_paragraph(Paragraph::new().add_run(Run::new().add_text("大小"))),
+                // TableCell::new()
+                //     .add_paragraph(Paragraph::new().add_run(Run::new().add_text("大小"))),
                 TableCell::new()
                     .add_paragraph(Paragraph::new().add_run(Run::new().add_text("是否为空"))),
                 TableCell::new()
@@ -80,13 +80,17 @@ impl DbUtil {
             ])];
             for column in table.columns {
                 table_row.push(TableRow::new(vec![
+                    // 字段名
                     TableCell::new()
                         .add_paragraph(Paragraph::new().add_run(Run::new().add_text(column.name))),
+                    // 类型
                     TableCell::new().add_paragraph(
                         Paragraph::new().add_run(Run::new().add_text(column.data_type.to_string())),
                     ),
-                    TableCell::new()
-                        .add_paragraph(Paragraph::new().add_run(Run::new().add_text(""))),
+                    // TableCell::new()
+                    //     .add_paragraph(Paragraph::new().add_run(Run::new().add_text(""))),
+
+                    // 是否为空
                     TableCell::new().add_paragraph(
                         Paragraph::new().add_run(Run::new().add_text(if column.nullable {
                             "是"
@@ -94,10 +98,12 @@ impl DbUtil {
                             "否"
                         })),
                     ),
+                    // 默认值
                     TableCell::new()
                         .add_paragraph(Paragraph::new().add_run(
                             Run::new().add_text(column.default.unwrap_or("".to_string())),
                         )),
+                    // 备注
                     TableCell::new().add_paragraph(
                         Paragraph::new().add_run(Run::new().add_text(column.comment.to_string())),
                     ),

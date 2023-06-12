@@ -70,10 +70,27 @@ impl Database for Mysql {
         // 查询表字段
         for table in tables.iter_mut() {
             let columns = conn.exec_map(
-                "select column_name, column_comment, data_type, is_nullable, column_key, column_default, extra from information_schema.columns where table_schema = ? and table_name = ?",
+                "select column_name, column_comment, data_type, is_nullable, column_key, column_default, extra,
+                CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE 
+                from information_schema.columns where table_schema = ? and table_name = ?",
                 (self.database.as_str(), table.name.as_str()),
-                |row:(String,String,String,String,String ,Option<String>,String)| {
-                    let (name, comment, data_type, nullable, key, default, extra) = row;
+                |row:(String,String,String,String,String ,Option<String>,String,Option<i64>,Option<i64>,Option<i64>)| {
+                    let (name, comment, data_type, nullable, key, default, extra,char_length,num_precision,num_scale) = row;
+                    let data_type = if let Some(char_length) = char_length {
+                        format!("{}({})",data_type,char_length)
+                    } else if let Some(num_precision) = num_precision {
+                        if let Some(num_scale) = num_scale{
+                            if num_scale == 0 {
+                                format!("{}({})",data_type,num_precision)
+                            } else {
+                                format!("{}({},{})",data_type,num_precision,num_scale)
+                            }
+                        } else {
+                            format!("{}({})",data_type,num_precision)
+                        }
+                    } else {
+                        data_type
+                    };
                     Column {
                         name,
                         comment,
