@@ -1,11 +1,14 @@
 use std::fs::File;
 
 use anyhow::Result;
-use docx_rs::{Docx, Paragraph, Run, Style, StyleType, TableCell, TableRow};
+use docx_rs::{
+    AlignmentType, Docx, Paragraph, Run, Style, StyleType, TableAlignmentType, TableCell, TableRow,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::Config;
 mod mysql;
+mod oracle;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Table {
@@ -17,7 +20,7 @@ pub struct Table {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Column {
     pub name: String,
-    pub comment: String,
+    pub comment: Option<String>,
     pub data_type: String,
     pub nullable: bool,
     pub key: String,
@@ -39,8 +42,9 @@ pub trait Database {
 
 impl DbUtil {
     pub fn new(config: Config) -> Self {
-        let db = match config.database.db_type.as_str() {
+        let db: Box<dyn Database> = match config.database.db_type.as_str() {
             "mysql" => Box::new(mysql::Mysql::new(config)),
+            "oracle" => Box::new(oracle::Oracle::new(config)),
             _ => panic!("not support database type"),
         };
 
@@ -53,11 +57,27 @@ impl DbUtil {
 
     pub fn gen_word(&mut self, path: &str) -> Result<()> {
         let tables = self.get_tables()?;
-        let mut doc = Docx::new().add_style(
-            Style::new("Heading1", StyleType::Paragraph)
-                .name("Heading 1")
-                .bold(),
-        );
+        let mut doc = Docx::new()
+            .add_style(
+                Style::new("Heading1", StyleType::Paragraph)
+                    .name("Heading 1")
+                    .bold(),
+            )
+            .add_style(
+                Style::new("Table1", StyleType::Table)
+                    .name("Table1")
+                    .table_property(
+                        docx_rs::TableProperty::new()
+                            .width(100, docx_rs::WidthType::Pct)
+                            .align(TableAlignmentType::Center),
+                    ),
+            )
+            .add_style(
+                Style::new("Table2", StyleType::Table)
+                    .name("Table2")
+                    .width(1000, docx_rs::WidthType::Pct)
+                    .align(AlignmentType::Center),
+            );
         for table in tables {
             doc = doc.add_paragraph(
                 Paragraph::new()
@@ -104,12 +124,12 @@ impl DbUtil {
                             Run::new().add_text(column.default.unwrap_or("".to_string())),
                         )),
                     // 备注
-                    TableCell::new().add_paragraph(
-                        Paragraph::new().add_run(Run::new().add_text(column.comment.to_string())),
-                    ),
+                    TableCell::new().add_paragraph(Paragraph::new().add_run(
+                        Run::new().add_text(column.comment.unwrap_or_default().to_string()),
+                    )),
                 ]));
             }
-            doc = doc.add_table(docx_rs::Table::new(table_row));
+            doc = doc.add_table(docx_rs::Table::new(table_row).style("Table1"));
         }
         let file = File::create(path)?;
         doc.build().pack(file)?;

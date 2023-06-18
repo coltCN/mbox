@@ -74,7 +74,7 @@ impl Database for Mysql {
                 CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE 
                 from information_schema.columns where table_schema = ? and table_name = ?",
                 (self.database.as_str(), table.name.as_str()),
-                |row:(String,String,String,String,String ,Option<String>,String,Option<i64>,Option<i64>,Option<i64>)| {
+                |row:(String,Option<String>,String,String,String ,Option<String>,String,Option<i64>,Option<i64>,Option<i64>)| {
                     let (name, comment, data_type, nullable, key, default, extra,char_length,num_precision,num_scale) = row;
                     let data_type = if let Some(char_length) = char_length {
                         format!("{}({})",data_type,char_length)

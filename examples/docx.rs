@@ -5,7 +5,7 @@ use docx_rs::{
     Docx, Paragraph, Run, RunFonts, Style, StyleType, Table, TableCell, TableProperty, TableRow,
 };
 fn main() -> Result<()> {
-    let file = File::create("targe/hello.docx").unwrap();
+    let file = File::create("target/hello.docx").unwrap();
     let table_row = vec![TableRow::new(vec![
         TableCell::new()
             .add_paragraph(Paragraph::new().add_run(Run::new().add_text("列名").style("front"))),
