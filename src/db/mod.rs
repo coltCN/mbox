@@ -57,27 +57,11 @@ impl DbUtil {
 
     pub fn gen_word(&mut self, path: &str) -> Result<()> {
         let tables = self.get_tables()?;
-        let mut doc = Docx::new()
-            .add_style(
-                Style::new("Heading1", StyleType::Paragraph)
-                    .name("Heading 1")
-                    .bold(),
-            )
-            .add_style(
-                Style::new("Table1", StyleType::Table)
-                    .name("Table1")
-                    .table_property(
-                        docx_rs::TableProperty::new()
-                            .width(100, docx_rs::WidthType::Pct)
-                            .align(TableAlignmentType::Center),
-                    ),
-            )
-            .add_style(
-                Style::new("Table2", StyleType::Table)
-                    .name("Table2")
-                    .width(1000, docx_rs::WidthType::Pct)
-                    .align(AlignmentType::Center),
-            );
+        let mut doc = Docx::new().add_style(
+            Style::new("Heading1", StyleType::Paragraph)
+                .name("Heading 1")
+                .bold(),
+        );
         for table in tables {
             doc = doc.add_paragraph(
                 Paragraph::new()
@@ -85,6 +69,8 @@ impl DbUtil {
                     .style("Heading1"),
             );
             let mut table_row = vec![TableRow::new(vec![
+                TableCell::new()
+                    .add_paragraph(Paragraph::new().add_run(Run::new().add_text("序号"))),
                 TableCell::new()
                     .add_paragraph(Paragraph::new().add_run(Run::new().add_text("字段名"))),
                 TableCell::new()
@@ -98,11 +84,16 @@ impl DbUtil {
                 TableCell::new()
                     .add_paragraph(Paragraph::new().add_run(Run::new().add_text("备注"))),
             ])];
-            for column in table.columns {
+            for (i, column) in table.columns.iter().enumerate() {
                 table_row.push(TableRow::new(vec![
+                    // 序号
+                    TableCell::new().add_paragraph(
+                        Paragraph::new().add_run(Run::new().add_text((i + 1).to_string())),
+                    ),
                     // 字段名
-                    TableCell::new()
-                        .add_paragraph(Paragraph::new().add_run(Run::new().add_text(column.name))),
+                    TableCell::new().add_paragraph(
+                        Paragraph::new().add_run(Run::new().add_text(column.name.clone())),
+                    ),
                     // 类型
                     TableCell::new().add_paragraph(
                         Paragraph::new().add_run(Run::new().add_text(column.data_type.to_string())),
@@ -119,17 +110,20 @@ impl DbUtil {
                         })),
                     ),
                     // 默认值
-                    TableCell::new()
-                        .add_paragraph(Paragraph::new().add_run(
-                            Run::new().add_text(column.default.unwrap_or("".to_string())),
-                        )),
+                    TableCell::new().add_paragraph(Paragraph::new().add_run(
+                        Run::new().add_text(column.default.clone().unwrap_or("".to_string())),
+                    )),
                     // 备注
                     TableCell::new().add_paragraph(Paragraph::new().add_run(
-                        Run::new().add_text(column.comment.unwrap_or_default().to_string()),
+                        Run::new().add_text(column.comment.clone().unwrap_or_default().to_string()),
                     )),
                 ]));
             }
-            doc = doc.add_table(docx_rs::Table::new(table_row).style("Table1"));
+            doc = doc.add_table(
+                docx_rs::Table::new(table_row)
+                    // .style("Table1") // .layout(docx_rs::TableLayoutType::Fixed)
+                    .width(8000, docx_rs::WidthType::Auto),
+            );
         }
         let file = File::create(path)?;
         doc.build().pack(file)?;
